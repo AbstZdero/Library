@@ -1,0 +1,186 @@
+--// AbstZdero UI Library
+
+local Library = {}
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--================ CONFIG =================--
+local File = "AbstZdero_Config.json"
+local Data = {}
+
+if isfile and isfile(File) then
+	Data = HttpService:JSONDecode(readfile(File))
+end
+
+local function Save()
+	if writefile then
+		writefile(File, HttpService:JSONEncode(Data))
+	end
+end
+
+--================ THEME =================--
+local Themes = {
+	Dark = {
+		BG = Color3.fromRGB(25,25,25),
+		Tab = Color3.fromRGB(30,30,30),
+		Btn = Color3.fromRGB(60,60,60),
+		On = Color3.fromRGB(0,170,0),
+		Off = Color3.fromRGB(80,80,80),
+		Text = Color3.new(1,1,1)
+	}
+}
+
+local CurrentTheme = Themes.Dark
+
+function Library:SetTheme(name)
+	if Themes[name] then
+		CurrentTheme = Themes[name]
+	end
+end
+
+--================ WINDOW =================--
+function Library:CreateWindow(title)
+	local Gui = Instance.new("ScreenGui", PlayerGui)
+	Gui.ResetOnSpawn = false
+
+	local Main = Instance.new("Frame", Gui)
+	Main.Size = UDim2.new(0,420,0,320)
+	Main.Position = UDim2.new(0.5,-210,0.5,-160)
+	Main.BackgroundColor3 = CurrentTheme.BG
+	Main.Active = true
+	Instance.new("UICorner", Main)
+
+	-- Drag
+	local drag,start,pos
+	Main.InputBegan:Connect(function(i)
+		if i.UserInputType.Name:find("Mouse") or i.UserInputType.Name=="Touch" then
+			drag=true start=i.Position pos=Main.Position
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(i)
+		if drag then
+			local d=i.Position-start
+			Main.Position=UDim2.new(pos.X.Scale,pos.X.Offset+d.X,pos.Y.Scale,pos.Y.Offset+d.Y)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function()
+		drag=false
+	end)
+
+	-- Title
+	local Title = Instance.new("TextLabel", Main)
+	Title.Size = UDim2.new(1,0,0,40)
+	Title.Text = title or "AbstZdero UI"
+	Title.BackgroundTransparency = 1
+	Title.TextScaled = true
+	Title.TextColor3 = CurrentTheme.Text
+
+	-- Tabs
+	local Tabs = Instance.new("Frame", Main)
+	Tabs.Size = UDim2.new(0,110,1,-40)
+	Tabs.Position = UDim2.new(0,0,0,40)
+	Tabs.BackgroundColor3 = CurrentTheme.Tab
+
+	local Content = Instance.new("Frame", Main)
+	Content.Size = UDim2.new(1,-110,1,-40)
+	Content.Position = UDim2.new(0,110,0,40)
+	Content.BackgroundTransparency = 1
+
+	Instance.new("UIListLayout", Tabs).Padding = UDim.new(0,5)
+
+	local Pages = {}
+
+	local Window = {}
+
+	--================ TAB =================--
+	function Window:CreateTab(name)
+		local Btn = Instance.new("TextButton", Tabs)
+		Btn.Size = UDim2.new(1,-10,0,40)
+		Btn.Text = name
+		Btn.BackgroundColor3 = CurrentTheme.Btn
+		Btn.TextColor3 = CurrentTheme.Text
+		Btn.TextScaled = true
+		Instance.new("UICorner", Btn)
+
+		local Page = Instance.new("Frame", Content)
+		Page.Size = UDim2.new(1,0,1,0)
+		Page.Visible = false
+		Page.BackgroundTransparency = 1
+		Instance.new("UIListLayout", Page).Padding = UDim.new(0,6)
+
+		Pages[name] = Page
+
+		Btn.MouseButton1Click:Connect(function()
+			for _,v in pairs(Pages) do v.Visible = false end
+			Page.Visible = true
+		end)
+
+		local Tab = {}
+
+		-- BUTTON
+		function Tab:Button(text, callback)
+			local b = Instance.new("TextButton", Page)
+			b.Size = UDim2.new(0.9,0,0,35)
+			b.Text = text
+			b.BackgroundColor3 = CurrentTheme.Btn
+			b.TextColor3 = CurrentTheme.Text
+			b.TextScaled = true
+			Instance.new("UICorner", b)
+
+			b.MouseButton1Click:Connect(callback)
+		end
+
+		-- SWITCH
+		function Tab:Switch(text, key, callback)
+			local state = Data[key] or false
+
+			local frame = Instance.new("Frame", Page)
+			frame.Size = UDim2.new(0.9,0,0,35)
+			frame.BackgroundTransparency = 1
+
+			local label = Instance.new("TextLabel", frame)
+			label.Size = UDim2.new(0.7,0,1,0)
+			label.Text = text
+			label.TextScaled = true
+			label.BackgroundTransparency = 1
+			label.TextColor3 = CurrentTheme.Text
+
+			local toggle = Instance.new("TextButton", frame)
+			toggle.Size = UDim2.new(0.3,0,0.8,0)
+			toggle.Position = UDim2.new(0.7,0,0.1,0)
+			toggle.Text = ""
+			Instance.new("UICorner", toggle)
+
+			local function Update()
+				toggle.BackgroundColor3 = state and CurrentTheme.On or CurrentTheme.Off
+			end
+
+			Update()
+
+			toggle.MouseButton1Click:Connect(function()
+				state = not state
+				Data[key] = state
+				Save()
+				Update()
+				callback(state)
+			end)
+
+			task.spawn(function()
+				callback(state)
+			end)
+		end
+
+		return Tab
+	end
+
+	return Window
+end
+
+return Library
