@@ -1,57 +1,33 @@
---// AbstZdero UI Library
+--// AbstZdero UI Library (Auto UI)
 
 local Library = {}
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
---================ CONFIG =================--
-local File = "AbstZdero_Config.json"
-local Data = {}
-
-if isfile and isfile(File) then
-	Data = HttpService:JSONDecode(readfile(File))
-end
-
-local function Save()
-	if writefile then
-		writefile(File, HttpService:JSONEncode(Data))
-	end
-end
-
 --================ THEME =================--
-local Themes = {
-	Dark = {
-		BG = Color3.fromRGB(25,25,25),
-		Tab = Color3.fromRGB(30,30,30),
-		Btn = Color3.fromRGB(60,60,60),
-		On = Color3.fromRGB(0,170,0),
-		Off = Color3.fromRGB(80,80,80),
-		Text = Color3.new(1,1,1)
-	}
+local Theme = {
+	BG = Color3.fromRGB(25,25,25),
+	Tab = Color3.fromRGB(30,30,30),
+	Btn = Color3.fromRGB(60,60,60),
+	On = Color3.fromRGB(0,170,0),
+	Off = Color3.fromRGB(80,80,80),
+	Text = Color3.new(1,1,1)
 }
-
-local CurrentTheme = Themes.Dark
-
-function Library:SetTheme(name)
-	if Themes[name] then
-		CurrentTheme = Themes[name]
-	end
-end
 
 --================ WINDOW =================--
 function Library:CreateWindow(title)
 	local Gui = Instance.new("ScreenGui", PlayerGui)
+	Gui.Name = "AbstZderoUI"
 	Gui.ResetOnSpawn = false
 
 	local Main = Instance.new("Frame", Gui)
 	Main.Size = UDim2.new(0,420,0,320)
 	Main.Position = UDim2.new(0.5,-210,0.5,-160)
-	Main.BackgroundColor3 = CurrentTheme.BG
+	Main.BackgroundColor3 = Theme.BG
 	Main.Active = true
 	Instance.new("UICorner", Main)
 
@@ -80,13 +56,42 @@ function Library:CreateWindow(title)
 	Title.Text = title or "AbstZdero UI"
 	Title.BackgroundTransparency = 1
 	Title.TextScaled = true
-	Title.TextColor3 = CurrentTheme.Text
+	Title.TextColor3 = Theme.Text
+
+	-- Close Button
+	local Close = Instance.new("TextButton", Main)
+	Close.Size = UDim2.new(0,30,0,30)
+	Close.Position = UDim2.new(1,-35,0,5)
+	Close.Text = "X"
+	Close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+	Close.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", Close)
+
+	-- Show Button
+	local Show = Instance.new("TextButton", Gui)
+	Show.Size = UDim2.new(0,160,0,40)
+	Show.Position = UDim2.new(0,10,0.5,-20)
+	Show.Text = "Show AbstZdero"
+	Show.Visible = false
+	Show.BackgroundColor3 = Color3.fromRGB(0,170,0)
+	Show.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", Show)
+
+	Close.MouseButton1Click:Connect(function()
+		Main.Visible = false
+		Show.Visible = true
+	end)
+
+	Show.MouseButton1Click:Connect(function()
+		Main.Visible = true
+		Show.Visible = false
+	end)
 
 	-- Tabs
 	local Tabs = Instance.new("Frame", Main)
 	Tabs.Size = UDim2.new(0,110,1,-40)
 	Tabs.Position = UDim2.new(0,0,0,40)
-	Tabs.BackgroundColor3 = CurrentTheme.Tab
+	Tabs.BackgroundColor3 = Theme.Tab
 
 	local Content = Instance.new("Frame", Main)
 	Content.Size = UDim2.new(1,-110,1,-40)
@@ -104,8 +109,8 @@ function Library:CreateWindow(title)
 		local Btn = Instance.new("TextButton", Tabs)
 		Btn.Size = UDim2.new(1,-10,0,40)
 		Btn.Text = name
-		Btn.BackgroundColor3 = CurrentTheme.Btn
-		Btn.TextColor3 = CurrentTheme.Text
+		Btn.BackgroundColor3 = Theme.Btn
+		Btn.TextColor3 = Theme.Text
 		Btn.TextScaled = true
 		Instance.new("UICorner", Btn)
 
@@ -124,55 +129,32 @@ function Library:CreateWindow(title)
 
 		local Tab = {}
 
-		-- BUTTON
 		function Tab:Button(text, callback)
 			local b = Instance.new("TextButton", Page)
 			b.Size = UDim2.new(0.9,0,0,35)
 			b.Text = text
-			b.BackgroundColor3 = CurrentTheme.Btn
-			b.TextColor3 = CurrentTheme.Text
+			b.BackgroundColor3 = Theme.Btn
+			b.TextColor3 = Theme.Text
 			b.TextScaled = true
 			Instance.new("UICorner", b)
 
 			b.MouseButton1Click:Connect(callback)
 		end
 
-		-- SWITCH
-		function Tab:Switch(text, key, callback)
-			local state = Data[key] or false
+		function Tab:Switch(text, callback)
+			local state = false
 
-			local frame = Instance.new("Frame", Page)
-			frame.Size = UDim2.new(0.9,0,0,35)
-			frame.BackgroundTransparency = 1
+			local b = Instance.new("TextButton", Page)
+			b.Size = UDim2.new(0.9,0,0,35)
+			b.Text = text.." : OFF"
+			b.BackgroundColor3 = Theme.Btn
+			b.TextColor3 = Theme.Text
+			b.TextScaled = true
+			Instance.new("UICorner", b)
 
-			local label = Instance.new("TextLabel", frame)
-			label.Size = UDim2.new(0.7,0,1,0)
-			label.Text = text
-			label.TextScaled = true
-			label.BackgroundTransparency = 1
-			label.TextColor3 = CurrentTheme.Text
-
-			local toggle = Instance.new("TextButton", frame)
-			toggle.Size = UDim2.new(0.3,0,0.8,0)
-			toggle.Position = UDim2.new(0.7,0,0.1,0)
-			toggle.Text = ""
-			Instance.new("UICorner", toggle)
-
-			local function Update()
-				toggle.BackgroundColor3 = state and CurrentTheme.On or CurrentTheme.Off
-			end
-
-			Update()
-
-			toggle.MouseButton1Click:Connect(function()
+			b.MouseButton1Click:Connect(function()
 				state = not state
-				Data[key] = state
-				Save()
-				Update()
-				callback(state)
-			end)
-
-			task.spawn(function()
+				b.Text = text.." : "..(state and "ON" or "OFF")
 				callback(state)
 			end)
 		end
@@ -182,5 +164,14 @@ function Library:CreateWindow(title)
 
 	return Window
 end
+
+--================ AUTO LOAD =================--
+local Window = Library:CreateWindow("AbstZdero UI")
+
+local MainTab = Window:CreateTab("Main")
+
+MainTab:Button("Loaded", function()
+	print("AbstZdero Loaded 🔥")
+end)
 
 return Library
